@@ -2,14 +2,16 @@ from collections import deque
 from typing import List, Optional, Any
 
 class MikanQueue:
-    """5枚1セットのカードキューを管理するクラス"""
-    
-    def __init__(self, cards: List[Any]):
+    """指定枚数1セットのカードキューを管理するクラス"""
+
+    def __init__(self, cards: List[Any], set_size: int = 5):
         """
         Args:
-            cards: 最大5枚のカードリスト
+            cards: 指定枚数までのカードリスト
+            set_size: セットのサイズ（デフォルト5枚）
         """
-        self.queue = deque(cards[:5])  # 最大5枚まで
+        self.set_size = set_size
+        self.queue = deque(cards[:set_size])  # 指定枚数まで
         self.completed = []  # このセットで完了したカード
         
     def get_current_card(self) -> Optional[Any]:
@@ -46,6 +48,13 @@ class MikanQueue:
         """完了したカード数"""
         return len(self.completed)
     
+    def push_front(self, card: Any):
+        """カードをキューの先頭に追加"""
+        self.queue.appendleft(card)
+        # completedからも除去（戻る操作の場合）
+        if card in self.completed:
+            self.completed.remove(card)
+
     def __len__(self) -> int:
         """キュー内のカード数"""
         return len(self.queue)

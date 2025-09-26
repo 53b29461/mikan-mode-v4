@@ -17,7 +17,13 @@ class MikanDialog(QDialog):
         
         self.setWindowTitle("Mikan Mode")
         self.setModal(True)
-        self.resize(800, 600)
+
+        # ウィンドウサイズ設定
+        self.resize(800, 600)  # 初期サイズ
+        self.setMinimumSize(600, 400)  # 最小サイズ
+
+        # リサイズ可能にする
+        self.setSizeGripEnabled(True)
         
         self._setup_ui()
         self._setup_shortcuts()
@@ -30,6 +36,8 @@ class MikanDialog(QDialog):
         # 進捗表示
         self.progress_label = QLabel()
         self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.progress_label.setMinimumHeight(30)
+        self.progress_label.setMaximumHeight(40)
         layout.addWidget(self.progress_label)
         
         # カード表示エリア
@@ -39,41 +47,54 @@ class MikanDialog(QDialog):
         # ボタンエリア
         button_layout = QHBoxLayout()
         
-        # ボタンの高さを設定
-        button_height = 50
+        # ボタンの高さを設定（リサイズに応じて調整可能）
+        button_height = 45
         
         self.show_answer_button = QPushButton("Show Answer (Space)")
         self.show_answer_button.clicked.connect(self._on_show_answer)
         self.show_answer_button.setMinimumHeight(button_height)
+        self.show_answer_button.setMaximumHeight(button_height + 10)
         button_layout.addWidget(self.show_answer_button)
         
         self.again_button = QPushButton("Again (1)")
         self.again_button.clicked.connect(lambda: self._on_answer(1))
         self.again_button.setMinimumHeight(button_height)
+        self.again_button.setMaximumHeight(button_height + 10)
         self.again_button.setVisible(False)
         button_layout.addWidget(self.again_button)
-        
+
         self.hard_button = QPushButton("Hard (2)")
         self.hard_button.clicked.connect(lambda: self._on_answer(2))
         self.hard_button.setMinimumHeight(button_height)
+        self.hard_button.setMaximumHeight(button_height + 10)
         self.hard_button.setVisible(False)
         button_layout.addWidget(self.hard_button)
-        
+
         self.good_button = QPushButton("Good (Space/3)")
         self.good_button.clicked.connect(lambda: self._on_answer(3))
         self.good_button.setMinimumHeight(button_height)
+        self.good_button.setMaximumHeight(button_height + 10)
         self.good_button.setVisible(False)
         button_layout.addWidget(self.good_button)
-        
+
         self.easy_button = QPushButton("Easy (4)")
         self.easy_button.clicked.connect(lambda: self._on_answer(4))
         self.easy_button.setMinimumHeight(button_height)
+        self.easy_button.setMaximumHeight(button_height + 10)
         self.easy_button.setVisible(False)
         button_layout.addWidget(self.easy_button)
-        
+
+        self.back_button = QPushButton("Back (B)")
+        self.back_button.clicked.connect(self._on_back)
+        self.back_button.setMinimumHeight(button_height)
+        self.back_button.setMaximumHeight(button_height + 10)
+        self.back_button.setVisible(False)
+        button_layout.addWidget(self.back_button)
+
         self.exit_button = QPushButton("Exit (Esc)")
         self.exit_button.clicked.connect(self._on_exit)
         self.exit_button.setMinimumHeight(button_height)
+        self.exit_button.setMaximumHeight(button_height + 10)
         self.exit_button.setVisible(False)  # 非表示にする
         button_layout.addWidget(self.exit_button)
         
@@ -106,6 +127,10 @@ class MikanDialog(QDialog):
         four_shortcut = QShortcut(QKeySequence("4"), self)
         four_shortcut.activated.connect(self._on_four_pressed)
         
+        # Bキーで戻る
+        back_shortcut = QShortcut(QKeySequence("B"), self)
+        back_shortcut.activated.connect(self._on_back)
+
         # Escキーで終了
         esc_shortcut = QShortcut(QKeySequence("Escape"), self)
         esc_shortcut.activated.connect(self._on_exit)
@@ -115,8 +140,13 @@ class MikanDialog(QDialog):
         progress = self.session.get_progress()
         text = (f"Set: {progress['current_set']}/{progress['total_sets']} | "
                 f"Completed: {progress['completed_cards']}/{progress['total_cards']} cards | "
-                f"Current queue: {progress['remaining_in_queue']}/5 cards")
+                f"Current queue: {progress['remaining_in_queue']}/{progress['set_size']} cards")
         self.progress_label.setText(text)
+
+    def _update_button_visibility(self):
+        """戻るボタンの表示・非表示を更新"""
+        can_go_back = self.session.can_go_back()
+        self.back_button.setVisible(can_go_back and not self.is_showing_answer)
         
     def _show_next_card(self):
         """次のカードを表示"""
@@ -134,9 +164,9 @@ class MikanDialog(QDialog):
         card_id = queue.get_current_card()
         if card_id:
             self.current_card = mw.col.get_card(card_id)
-            # Initialize timer properly
-            self.current_card.timerStarted = time.time()
-            
+            # カードを履歴に追加
+            self.session.add_to_history(card_id)
+
             # 質問を表示
             self.is_showing_answer = False
             self._render_card(show_answer=False)
@@ -147,8 +177,9 @@ class MikanDialog(QDialog):
             self.hard_button.setVisible(False)
             self.good_button.setVisible(False)
             self.easy_button.setVisible(False)
-            
+
             self._update_progress()
+            self._update_button_visibility()
             
     def _render_card(self, show_answer=False):
         """カードをレンダリング"""
@@ -192,6 +223,9 @@ class MikanDialog(QDialog):
         self.hard_button.setVisible(True)
         self.good_button.setVisible(True)
         self.easy_button.setVisible(True)
+
+        # 戻るボタンの表示を更新
+        self._update_button_visibility()
         
     def _on_answer(self, ease):
         """回答ボタンの処理"""
@@ -201,15 +235,39 @@ class MikanDialog(QDialog):
             if card_id:
                 # 初回回答結果を記録
                 self.session.record_first_answer(card_id, ease)
-                
+
                 if ease == 1:  # Again（もう一度）
                     queue.mark_as_unknown()
                 else:  # Hard/Good/Easy（すべてわかった扱い）
                     queue.mark_as_known()
                     self.session.mark_card_complete(card_id)
-            
+
         self._show_next_card()
-        
+
+    def _on_back(self):
+        """戻るボタンの処理"""
+        if self.session.can_go_back():
+            # 前のカードに戻る
+            previous_card_id = self.session.go_back()
+            if previous_card_id:
+                # カードを再表示
+                self.current_card = mw.col.get_card(previous_card_id)
+
+                # 質問を表示
+                self.is_showing_answer = False
+                self._render_card(show_answer=False)
+
+                # ボタンの表示を切り替え
+                self.show_answer_button.setVisible(True)
+                self.again_button.setVisible(False)
+                self.hard_button.setVisible(False)
+                self.good_button.setVisible(False)
+                self.easy_button.setVisible(False)
+
+                # 進捗を更新
+                self._update_progress()
+                self._update_button_visibility()
+
     def _on_exit(self):
         """終了ボタンの処理"""
         reply = QMessageBox.question(

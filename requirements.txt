@@ -1,0 +1,12 @@
+# Anki addon development dependencies
+# Note: These are for development/testing only
+# The actual addon runs within Anki's environment
+
+# Development tools
+pytest>=7.0.0
+black>=22.0.0
+mypy>=1.0.0
+
+# For testing without full Anki environment (if needed)
+# PyQt6>=6.4.0
+# typing-extensions>=4.0.0
