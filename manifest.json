@@ -1,0 +1,13 @@
+{
+  "name": "Mikan Mode",
+  "package": "mikan_mode",
+  "author": "53b29461",
+  "version": "1.0.0",
+  "description": "Implements the mikan app's learning algorithm: 5-card sets with repetition until all are marked as 'known'.",
+  "homepage": "",
+  "min_point_version": 23,
+  "max_point_version": 0,
+  "conflicts": [],
+  "mod": 0
+}
+
