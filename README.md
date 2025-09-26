@@ -104,16 +104,23 @@ For bug reports and feature requests, please visit the GitHub repository or Anki
 
 ## 📋 Version History
 
-### 1.0.0 (2024-09-26)
-- **Flexible session settings**: Configurable cards per set (3-10) and number of sets (1-100)
-- **Accurate time tracking**: Session-based learning time measurement with realistic Anki statistics
-- **Undo functionality**: Back button with keyboard shortcut (B key) and state restoration
-- **Resizable interface**: Adaptive window sizing with minimum size protection
-- **Enhanced keyboard shortcuts**: Complete set of navigation and response shortcuts
+### 2.0.0 (2024-09-26) - Major Update
+- **🎛️ Flexible session settings**: Configurable cards per set (3-10) and number of sets (1-100)
+- **⏱️ Accurate time tracking**: Session-based learning time measurement with realistic Anki statistics
+- **🔙 Undo functionality**: Back button with keyboard shortcut (B key) and state restoration
+- **🖥️ Resizable interface**: Adaptive window sizing with minimum size protection (600x400)
+- **⌨️ Enhanced keyboard shortcuts**: Complete set of navigation and response shortcuts
+- **📊 Real-time progress tracking**: Visual feedback with detailed progress information
+- **🔧 Robust error handling**: Comprehensive error management and user feedback
+- **📦 Distribution ready**: Complete .ankiaddon package with proper metadata
+
+### 1.0.0 (2024-08-20) - Initial Release
+- **Basic 5-card set learning**: Fixed 5-card sets with repetition algorithm
 - **Smart card selection**: Uses Anki's scheduling algorithm for optimal learning
-- **Real-time progress tracking**: Visual feedback with detailed progress information
-- **Robust error handling**: Comprehensive error management and user feedback
-- **Ready for distribution**: Complete .ankiaddon package with proper metadata
+- **Basic keyboard shortcuts**: Space, 1, 2, 3, Esc keys
+- **Session management**: Fixed session size configuration
+- **Progress tracking**: Basic progress display
+- **Anki integration**: Learning results recorded in Anki statistics
 
 ### Development Features
 - Modern Qt-based interface with proper event handling
