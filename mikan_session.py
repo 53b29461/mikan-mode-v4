@@ -34,31 +34,43 @@ class MikanSession:
         self.session_start_time = time.time()
         
     def _prepare_cards(self):
-        """Ankiの復習アルゴリズムに基づいてカードを選出しシャッフル"""
+        """復習日時の古い順にカードを選出してシャッフル"""
         try:
             # デッキ名を取得
             deck_name = mw.col.decks.name(self.deck_id)
-            
+
             # 復習対象のカードを取得
             due_cards = list(mw.col.find_cards(f'deck:"{deck_name}" is:due'))
-            
+
             # 新規カードを取得
             new_cards = list(mw.col.find_cards(f'deck:"{deck_name}" is:new'))
-            
+
             # 学習中のカードも含める
             learning_cards = list(mw.col.find_cards(f'deck:"{deck_name}" is:learn'))
-            
+
             # すべてのカードを結合
             all_card_ids = due_cards + new_cards + learning_cards
-            
+
             # 重複を除去
             all_card_ids = list(set(all_card_ids))
-            
+
             # カードが見つからない場合はすべてのカードから取得
             if not all_card_ids:
                 all_card_ids = list(mw.col.find_cards(f'deck:"{deck_name}"'))
-            
-            # session_sizeまでに制限
+
+            # 期日でソート（復習カード優先、古い順）
+            def get_priority_due_date(card_id):
+                card = mw.col.get_card(card_id)
+                if card.type == 0:  # New cards
+                    # 新規カードは復習カードより後に配置（大きな値 + 作成順）
+                    return 999999 + card.due
+                else:  # Review/Learning cards (type 1,2,3)
+                    # 復習カードは実際の期日（期日超過ほど小さい値）
+                    return card.due
+
+            all_card_ids.sort(key=get_priority_due_date)
+
+            # session_sizeまでに制限（古い順から）
             self.all_cards = all_card_ids[:self.session_size]
             
             # カードが1枚もない場合のエラーハンドリング

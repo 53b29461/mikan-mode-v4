@@ -22,6 +22,12 @@ class MikanDialog(QDialog):
         self.resize(800, 600)  # 初期サイズ
         self.setMinimumSize(600, 400)  # 最小サイズ
 
+        # ウィンドウフラグ設定（最大化ボタンを有効にする）
+        self.setWindowFlags(Qt.WindowType.Dialog |
+                           Qt.WindowType.WindowMinimizeButtonHint |
+                           Qt.WindowType.WindowMaximizeButtonHint |
+                           Qt.WindowType.WindowCloseButtonHint)
+
         # リサイズ可能にする
         self.setSizeGripEnabled(True)
         
@@ -33,12 +39,26 @@ class MikanDialog(QDialog):
         """UIをセットアップ"""
         layout = QVBoxLayout()
         
+        # 進捗表示エリア（戻るボタンも含む）
+        progress_layout = QHBoxLayout()
+
         # 進捗表示
         self.progress_label = QLabel()
         self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.progress_label.setMinimumHeight(30)
         self.progress_label.setMaximumHeight(40)
-        layout.addWidget(self.progress_label)
+        progress_layout.addWidget(self.progress_label)
+
+        # 戻るボタン（右上に控えめに配置）
+        self.back_button = QPushButton("← Back")
+        self.back_button.clicked.connect(self._on_back)
+        self.back_button.setMaximumWidth(80)
+        self.back_button.setMaximumHeight(25)
+        self.back_button.setVisible(False)
+        self.back_button.setStyleSheet("QPushButton { font-size: 11px; padding: 2px 6px; }")
+        progress_layout.addWidget(self.back_button)
+
+        layout.addLayout(progress_layout)
         
         # カード表示エリア
         self.web_view = mw.web.createWindow(self)
@@ -83,13 +103,6 @@ class MikanDialog(QDialog):
         self.easy_button.setMaximumHeight(button_height + 10)
         self.easy_button.setVisible(False)
         button_layout.addWidget(self.easy_button)
-
-        self.back_button = QPushButton("Back (B)")
-        self.back_button.clicked.connect(self._on_back)
-        self.back_button.setMinimumHeight(button_height)
-        self.back_button.setMaximumHeight(button_height + 10)
-        self.back_button.setVisible(False)
-        button_layout.addWidget(self.back_button)
 
         self.exit_button = QPushButton("Exit (Esc)")
         self.exit_button.clicked.connect(self._on_exit)
@@ -289,12 +302,19 @@ class MikanDialog(QDialog):
         """完了メッセージを表示"""
         # 統計を一括更新
         updated_count = self.session.apply_final_answers()
-        
+
         progress = self.session.get_progress()
         stats = self.session.get_statistics()
-        
+
+        # セッション所要時間を計算
+        session_duration = self.session.session_end_time - self.session.session_start_time
+        minutes = int(session_duration // 60)
+        seconds = int(session_duration % 60)
+        duration_text = f"{minutes}分{seconds}秒" if minutes > 0 else f"{seconds}秒"
+
         showInfo(f"Mikan Mode Complete!\n\n"
                 f"Cards studied: {progress['completed_cards']}\n"
+                f"Session time: {duration_text}\n"
                 f"Results saved to Anki: {updated_count}\n\n"
                 f"--- Performance ---\n"
                 f"New cards: {stats['new_correct']}/{stats['new_total']} ({stats['new_percentage']:.0f}%)\n"
