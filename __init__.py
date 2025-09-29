@@ -1,5 +1,5 @@
 from aqt import mw
-from aqt.qt import QAction, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QSpinBox, QLabel
+from aqt.qt import QAction, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QSpinBox, QLabel, QSlider, Qt
 from aqt.utils import tooltip, showInfo
 from aqt import gui_hooks
 from .mikan_session import MikanSession
@@ -10,6 +10,18 @@ def on_profile_loaded():
     action.triggered.connect(show_mikan_dialog)
     mw.form.menuTools.addAction(action)
 
+def get_config():
+    """アドオン設定を取得"""
+    return mw.addonManager.getConfig(__name__) or {
+        "set_size": 5,
+        "num_sets": 6,
+        "font_size": 16
+    }
+
+def save_config(config):
+    """アドオン設定を保存"""
+    mw.addonManager.writeConfig(__name__, config)
+
 def show_mikan_dialog():
     """Mikan Mode開始ダイアログを表示"""
     dialog = QDialog(mw)
@@ -18,6 +30,9 @@ def show_mikan_dialog():
 
     layout = QVBoxLayout()
 
+    # 設定を読み込み
+    config = get_config()
+
     # Set size setting
     set_size_layout = QHBoxLayout()
     set_size_layout.addWidget(QLabel("Cards per set:"))
@@ -25,7 +40,7 @@ def show_mikan_dialog():
     set_size_spinbox = QSpinBox()
     set_size_spinbox.setMinimum(3)
     set_size_spinbox.setMaximum(10)
-    set_size_spinbox.setValue(5)
+    set_size_spinbox.setValue(config["set_size"])
     set_size_spinbox.setSuffix(" cards")
     set_size_layout.addWidget(set_size_spinbox)
 
@@ -38,11 +53,35 @@ def show_mikan_dialog():
     num_sets_spinbox = QSpinBox()
     num_sets_spinbox.setMinimum(1)
     num_sets_spinbox.setMaximum(100)
-    num_sets_spinbox.setValue(6)
+    num_sets_spinbox.setValue(config["num_sets"])
     num_sets_spinbox.setSuffix(" sets")
     num_sets_layout.addWidget(num_sets_spinbox)
 
     layout.addLayout(num_sets_layout)
+
+    # Font size setting
+    font_size_layout = QHBoxLayout()
+    font_size_layout.addWidget(QLabel("Font size:"))
+
+    font_size_slider = QSlider(Qt.Orientation.Horizontal)
+    font_size_slider.setMinimum(12)
+    font_size_slider.setMaximum(32)
+    font_size_slider.setValue(config["font_size"])
+    font_size_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+    font_size_slider.setTickInterval(4)
+
+    font_size_label = QLabel(f"{config['font_size']}px")
+    font_size_label.setMinimumWidth(40)
+
+    def update_font_size_label():
+        font_size_label.setText(f"{font_size_slider.value()}px")
+
+    font_size_slider.valueChanged.connect(update_font_size_label)
+
+    font_size_layout.addWidget(font_size_slider)
+    font_size_layout.addWidget(font_size_label)
+
+    layout.addLayout(font_size_layout)
 
     # Total cards display
     total_layout = QHBoxLayout()
@@ -64,7 +103,7 @@ def show_mikan_dialog():
 
     start_button = QPushButton("Start")
     start_button.clicked.connect(lambda: start_mikan_mode(
-        set_size_spinbox.value(), num_sets_spinbox.value(), dialog))
+        set_size_spinbox.value(), num_sets_spinbox.value(), font_size_slider.value(), dialog))
     button_layout.addWidget(start_button)
 
     cancel_button = QPushButton("Cancel")
@@ -76,8 +115,16 @@ def show_mikan_dialog():
     dialog.setLayout(layout)
     dialog.exec()
 
-def start_mikan_mode(set_size: int, num_sets: int, dialog: QDialog):
+def start_mikan_mode(set_size: int, num_sets: int, font_size: int, dialog: QDialog):
     """Mikan Modeを開始"""
+    # 設定を保存
+    config = {
+        "set_size": set_size,
+        "num_sets": num_sets,
+        "font_size": font_size
+    }
+    save_config(config)
+
     dialog.accept()
 
     try:
@@ -88,8 +135,8 @@ def start_mikan_mode(set_size: int, num_sets: int, dialog: QDialog):
         session_size = set_size * num_sets
         session = MikanSession(deck_id, session_size, set_size)
 
-        # Mikan Modeダイアログを表示
-        mikan_dialog = MikanDialog(session)
+        # Mikan Modeダイアログを表示（文字サイズも渡す）
+        mikan_dialog = MikanDialog(session, font_size)
         mikan_dialog.exec()
 
     except Exception as e:

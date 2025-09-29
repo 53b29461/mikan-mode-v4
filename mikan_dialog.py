@@ -9,9 +9,10 @@ from .mikan_queue import MikanQueue
 class MikanDialog(QDialog):
     """Mikan Mode用の独立したダイアログ"""
     
-    def __init__(self, session: MikanSession):
+    def __init__(self, session: MikanSession, font_size: int = 16):
         super().__init__(mw)
         self.session = session
+        self.font_size = font_size
         self.current_card = None
         self.is_showing_answer = False
         
@@ -208,13 +209,21 @@ class MikanDialog(QDialog):
         # CSSを取得
         css = self.current_card.css()
         
-        # 基本的なHTMLテンプレート
+        # 基本的なHTMLテンプレート（カスタム文字サイズ付き）
         full_html = f"""
 <!doctype html>
 <html>
 <head>
 <style>
 {css}
+/* Mikan Mode カスタム文字サイズ */
+.card {{
+    font-size: {self.font_size}px !important;
+    line-height: 1.4 !important;
+}}
+.card * {{
+    font-size: inherit !important;
+}}
 </style>
 </head>
 <body class="card">
