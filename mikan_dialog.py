@@ -199,23 +199,15 @@ class MikanDialog(QDialog):
         """カードをレンダリング"""
         if not self.current_card:
             return
-            
+
         # Ankiの標準的なレンダリング方法を使用
         if show_answer:
             html = self.current_card.answer()
         else:
             html = self.current_card.question()
-            
-        # CSSを取得
-        css = self.current_card.css()
-        
-        # 基本的なHTMLテンプレート（カスタム文字サイズ付き）
-        full_html = f"""
-<!doctype html>
-<html>
-<head>
-<style>
-{css}
+
+        # カスタム文字サイズ用のCSS
+        custom_css = f"""
 /* Mikan Mode カスタム文字サイズ */
 .card {{
     font-size: {self.font_size}px !important;
@@ -224,15 +216,10 @@ class MikanDialog(QDialog):
 .card * {{
     font-size: inherit !important;
 }}
-</style>
-</head>
-<body class="card">
-{html}
-</body>
-</html>
 """
-        
-        self.web_view.stdHtml(full_html)
+
+        # Ankiの標準レンダリングを使用してHTMLを生成
+        self.web_view.stdHtml(html, css=[custom_css])
         
     def _on_show_answer(self):
         """解答を表示"""
