@@ -148,6 +148,14 @@ class MikanDialog(QDialog):
         # Escキーで終了
         esc_shortcut = QShortcut(QKeySequence("Escape"), self)
         esc_shortcut.activated.connect(self._on_exit)
+
+        # Ctrl+で文字サイズ拡大
+        zoom_in_shortcut = QShortcut(QKeySequence("Ctrl++"), self)
+        zoom_in_shortcut.activated.connect(self._on_zoom_in)
+
+        # Ctrl-で文字サイズ縮小
+        zoom_out_shortcut = QShortcut(QKeySequence("Ctrl+-"), self)
+        zoom_out_shortcut.activated.connect(self._on_zoom_out)
         
     def _update_progress(self):
         """進捗表示を更新"""
@@ -356,3 +364,30 @@ class MikanDialog(QDialog):
                 showInfo(f"Learning results saved to Anki\nUpdated cards: {updated_count}")
         
         super().closeEvent(event)
+
+    def _on_zoom_in(self):
+        """文字サイズを拡大（Ctrl++）"""
+        if self.font_size < 32:  # 最大サイズ制限
+            self.font_size += 2
+            self._update_font_size()
+
+    def _on_zoom_out(self):
+        """文字サイズを縮小（Ctrl+-）"""
+        if self.font_size > 12:  # 最小サイズ制限
+            self.font_size -= 2
+            self._update_font_size()
+
+    def _update_font_size(self):
+        """文字サイズ変更を適用"""
+        # 現在のカードを再レンダリング
+        if self.current_card:
+            self._render_card(self.is_showing_answer)
+
+        # 設定を保存（アドオン設定に保存）
+        from aqt import mw
+        config = mw.addonManager.getConfig(__name__.split('.')[0]) or {}
+        config["font_size"] = self.font_size
+        mw.addonManager.writeConfig(__name__.split('.')[0], config)
+
+        # フィードバック表示
+        tooltip(f"Font size: {self.font_size}px", 1000)
