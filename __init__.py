@@ -1,5 +1,5 @@
 from aqt import mw
-from aqt.qt import QAction, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QSpinBox, QLabel, QSlider, Qt
+from aqt.qt import QAction, QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QSpinBox, QLabel, QSlider, QComboBox, Qt
 from aqt.utils import tooltip, showInfo
 from aqt import gui_hooks
 from .mikan_session import MikanSession
@@ -32,6 +32,20 @@ def show_mikan_dialog():
 
     # 設定を読み込み
     config = get_config()
+
+    # Deck selection
+    deck_layout = QHBoxLayout()
+    deck_layout.addWidget(QLabel("Deck:"))
+    deck_combo = QComboBox()
+    current_deck_id = mw.col.decks.selected()
+    selected_index = 0
+    for i, deck in enumerate(mw.col.decks.all_names_and_ids()):
+        deck_combo.addItem(deck.name, deck.id)
+        if deck.id == current_deck_id:
+            selected_index = i
+    deck_combo.setCurrentIndex(selected_index)
+    deck_layout.addWidget(deck_combo)
+    layout.addLayout(deck_layout)
 
     # Set size setting
     set_size_layout = QHBoxLayout()
@@ -103,7 +117,8 @@ def show_mikan_dialog():
 
     start_button = QPushButton("Start")
     start_button.clicked.connect(lambda: start_mikan_mode(
-        set_size_spinbox.value(), num_sets_spinbox.value(), font_size_slider.value(), dialog))
+        set_size_spinbox.value(), num_sets_spinbox.value(), font_size_slider.value(),
+        deck_combo.currentData(), dialog))
     button_layout.addWidget(start_button)
 
     cancel_button = QPushButton("Cancel")
@@ -115,7 +130,7 @@ def show_mikan_dialog():
     dialog.setLayout(layout)
     dialog.exec()
 
-def start_mikan_mode(set_size: int, num_sets: int, font_size: int, dialog: QDialog):
+def start_mikan_mode(set_size: int, num_sets: int, font_size: int, deck_id: int, dialog: QDialog):
     """Mikan Modeを開始"""
     # 設定を保存
     config = {
@@ -128,9 +143,6 @@ def start_mikan_mode(set_size: int, num_sets: int, font_size: int, dialog: QDial
     dialog.accept()
 
     try:
-        # 現在のデッキIDを取得
-        deck_id = mw.col.decks.selected()
-
         # セッションを作成（総カード数とセットサイズを渡す）
         session_size = set_size * num_sets
         session = MikanSession(deck_id, session_size, set_size)

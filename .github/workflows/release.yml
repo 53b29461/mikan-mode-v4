@@ -1,0 +1,30 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build .ankiaddon
+        run: |
+          zip -r mikan_mode_v4.ankiaddon \
+            __init__.py \
+            mikan_session.py \
+            mikan_dialog.py \
+            mikan_queue.py \
+            manifest.json \
+            config.json
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mikan_mode_v4.ankiaddon
+          generate_release_notes: true
