@@ -82,12 +82,14 @@ Use keyboard shortcuts or click buttons to respond:
 6. Restart Anki
 7. Access via **Tools → Mikan Mode**
 
-### Method 2: AnkiWeb (when available)
+### Method 2: AnkiWeb
 1. Open Anki
 2. Go to **Tools → Add-ons → Get Add-ons**
-3. Search for "Mikan Mode"
-4. Click **Install**
+3. Enter code: **1859716654**
+4. Click **OK** to install
 5. Restart Anki
+
+Or visit: [https://ankiweb.net/shared/info/1859716654](https://ankiweb.net/shared/info/1859716654)
 
 ## System Requirements
 
